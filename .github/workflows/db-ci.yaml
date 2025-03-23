@@ -1,0 +1,24 @@
+---
+    name: Call a db CI workflow
+
+    on:
+      pull_request:
+        branches:
+          - 'master'
+        paths:
+          - 'terraform/aurora/**'
+          - '.github/workflows/db-ci.yaml'
+
+    jobs:
+      call_ci_workflow_for_db:
+        permissions:
+          id-token: write
+          contents: read
+          pull-requests: write
+        uses: ./.github/workflows/reusable-ci-workflow.yaml
+        with:
+          module_path: db
+          aws_region: us-east-1
+          dev: true
+          stg: true
+          prod: false

@@ -1,0 +1,372 @@
+name: Reusable CD workflow
+
+on:
+  workflow_call:
+    inputs:
+      module_path:
+        required: true
+        type: string
+      dev:
+        required: false
+        type: boolean
+      stg:
+        required: false
+        type: boolean
+      prod:
+        required: false
+        type: boolean
+      aws_region:
+        required: true
+        type: string
+
+env:
+  DIRECTORY: ${{ inputs.module_path }}
+
+jobs:
+  dev_plan:
+    name: Run terraform plan for dev
+    runs-on: ubuntu-latest
+    environment: dev
+    outputs:
+      plan_id: ${{ steps.dev_plan.outputs.plan_id }}
+    if: inputs.dev == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set outputs
+        id: workflow_vars
+        run: |
+          echo "plan_id=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_OUTPUT
+
+      - name: Install AWS CLI
+        run: ./scripts/dependencies/install-aws-cli.sh
+        continue-on-error: false
+
+        #get aws credentials for backend
+      - name: Configure credentials for terraform backend
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+        # initialize backend
+      - name: Initialize terraform backend
+        run: |
+          terraform -v
+          source scripts/action-init-plan-apply.sh -i dev
+
+      - name: Configure credentials for dev
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Plan against dev
+        id: dev_plan
+        run: |
+         source scripts/action-init-plan-apply.sh -p dev -d ${{ env.DIRECTORY }}
+
+          # publish plan to artifacts
+      - name: Publish Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: "dev-${{ inputs.module_path }}-${{ env.PLAN_ID }}-tfplan"
+          path: "terraform/${{ inputs.module_path }}/dev-${{ inputs.module_path }}-${{ env.PLAN_ID }}.tfplan"
+        env:
+          PLAN_ID: ${{ steps.workflow_vars.outputs.plan_id }}
+
+  dev_deploy:
+    name: "dev: Deploy for terraform/${{ inputs.module_path }}"
+    runs-on: ubuntu-latest
+    environment: dev
+    needs: dev_plan
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    if: inputs.dev == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set outputs
+        id: workflow_vars
+        run: |
+          echo "plan_id=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_OUTPUT
+
+        # Download published tfplan artifact
+      - name: Download tfplan
+        uses: actions/download-artifact@v3
+        with:
+          name: "dev-${{ inputs.module_path }}-${{ env.PLAN_ID }}-tfplan"
+          path: "terraform/${{ inputs.module_path }}/"
+        env:
+          PLAN_ID: ${{ steps.workflow_vars.outputs.plan_id }}
+
+      # install aws cli
+      - name: Install AWS CLI
+        run: ./scripts/dependencies/install-aws-cli.sh
+        continue-on-error: false
+
+      # get aws credentials for backend
+      - name: Configure credentials for backend
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+      # initialize backend
+      - name: Initialize terraform backend
+        run: |
+          pwd
+          terraform -v
+          source scripts/action-init-plan-apply.sh -i dev
+
+      # get aws credentials for dev
+      - name: Configure credentials for dev
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: "Apply against dev"
+        id: dev_apply
+        run: |
+          source scripts/action-init-plan-apply.sh -a dev -d ${{ inputs.module_path }}
+
+  stg_plan:
+    name: Run terraform plan for stg
+    runs-on: ubuntu-latest
+    environment: stg
+    outputs:
+      plan_id: ${{ steps.stg_plan.outputs.plan_id }}
+    if: inputs.stg == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set outputs
+        id: workflow_vars
+        run: |
+          echo "plan_id=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_OUTPUT
+
+      - name: Install AWS CLI
+        run: ./scripts/dependencies/install-aws-cli.sh
+        continue-on-error: false
+
+        #get aws credentials for backend
+      - name: Configure credentials for terraform backend
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+        # initialize backend
+      - name: Initialize terraform backend
+        run: |
+          terraform -v
+          source scripts/action-init-plan-apply.sh -i stg
+
+      - name: Configure credentials for stg
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Plan against stg
+        id: stg_plan
+        run: |
+          source scripts/action-init-plan-apply.sh -p stg -d ${{ env.DIRECTORY }}
+
+          # publish plan to artifacts
+      - name: Publish Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: "stg-${{ inputs.module_path }}-${{ env.PLAN_ID }}-tfplan"
+          path: "terraform/${{ inputs.module_path }}/stg-${{ inputs.module_path }}-${{ env.PLAN_ID }}.tfplan"
+        env:
+          PLAN_ID: ${{ steps.workflow_vars.outputs.plan_id }}
+
+  stg_deploy:
+    name: "stg: Deploy for terraform/${{ inputs.module_path }}"
+    runs-on: ubuntu-latest
+    environment: stg
+    needs: stg_plan
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    if: inputs.stg == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set outputs
+        id: workflow_vars
+        run: |
+          echo "plan_id=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_OUTPUT
+
+      - name: Download tfplan
+        uses: actions/download-artifact@v3
+        with:
+          name: "stg-${{ inputs.module_path }}-${{ env.PLAN_ID }}-tfplan"
+          path: "terraform/${{ inputs.module_path }}/"
+        env:
+          PLAN_ID: ${{ steps.workflow_vars.outputs.plan_id }}
+
+      # install aws cli
+      - name: Install AWS CLI
+        run: ./scripts/dependencies/install-aws-cli.sh
+        continue-on-error: false
+
+      # get aws credentials for backend
+      - name: Configure credentials for backend
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+      # initialize backend
+      - name: Initialize terraform backend
+        run: |
+          pwd
+          terraform -v
+          source scripts/action-init-plan-apply.sh -i stg
+
+      # get aws credentials for stg
+      - name: "Configure credentials for stg"
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: "Apply against stg"
+        id: stg_apply
+        run: |
+          source scripts/action-init-plan-apply.sh -a stg -d ${{ inputs.module_path }}
+    
+  prod_plan:
+    name: Run terraform plan for prod
+    runs-on: ubuntu-latest
+    environment: prod
+    outputs:
+      plan_id: ${{ steps.prod_plan.outputs.plan_id }}
+    if: inputs.prod == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set outputs
+        id: workflow_vars
+        run: |
+          echo "plan_id=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_OUTPUT
+
+      - name: Install AWS CLI
+        run: ./scripts/dependencies/install-aws-cli.sh
+        continue-on-error: false
+
+        #get aws credentials for backend
+      - name: Configure credentials for terraform backend
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+        # initialize backend
+      - name: Initialize terraform backend
+        run: |
+          terraform -v
+          source scripts/action-init-plan-apply.sh -i prod
+
+      - name: Configure credentials for prod
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Plan against prod
+        id: prod_plan
+        run: |
+          source scripts/action-init-plan-apply.sh -p prod -d ${{ env.DIRECTORY }}
+
+          # publish plan to artifacts
+      - name: Publish Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: "prod-${{ inputs.module_path }}-${{ env.PLAN_ID }}-tfplan"
+          path: "terraform/${{ inputs.module_path }}/prod-${{ inputs.module_path }}-${{ env.PLAN_ID }}.tfplan"
+        env:
+          PLAN_ID: ${{ steps.workflow_vars.outputs.plan_id }}   
+
+  ## Manual approval
+  approval_prod:
+    name: Approve terraform apply
+    needs: prod_plan
+    runs-on: ubuntu-latest
+    steps:
+    - name: manual approval
+      uses: trstringer/manual-approval@v1
+      with:
+        secret: ${{ github.TOKEN }}
+        approvers: Arunsai14,prernagp
+        minimum-approvals: 1
+
+  prod_deploy:
+    name: "prod: Deploy for terraform/${{ inputs.module_path }}"
+    runs-on: ubuntu-latest
+    environment: prod
+    needs: approval_prod 
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    if: inputs.prod == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set outputs
+        id: workflow_vars
+        run: |
+          echo "plan_id=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_OUTPUT
+
+      - name: Download tfplan
+        uses: actions/download-artifact@v3
+        with:
+          name: "prod-${{ inputs.module_path }}-${{ env.PLAN_ID }}-tfplan"
+          path: "terraform/${{ inputs.module_path }}/"
+        env:
+          PLAN_ID: ${{ steps.workflow_vars.outputs.plan_id }}
+
+      # install aws cli
+      - name: Install AWS CLI
+        run: ./scripts/dependencies/install-aws-cli.sh
+        continue-on-error: false
+
+      # get aws credentials for backend
+      - name: Configure credentials for backend
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+      # initialize backend
+      - name: Initialize terraform backend
+        run: |
+          pwd
+          terraform -v
+          source scripts/action-init-plan-apply.sh -i prod
+
+      # get aws credentials for prod
+      - name: "Configure credentials for prod"
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: "Apply against prod"
+        id: prod_apply
+        run: |
+          source scripts/action-init-plan-apply.sh -a prod -d ${{ inputs.module_path }}
+    

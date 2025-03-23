@@ -1,0 +1,30 @@
+---
+    name: Call a db CD workflow
+
+    on:
+      push:
+        branches:
+          - master
+        paths:
+          - 'terraform/aurora/**'
+          - '.github/workflows/db-cd.yaml'
+
+      workflow_dispatch:
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    jobs:
+      call_cd_workflow_for_db:
+        permissions:
+          id-token: write
+          contents: read
+          pull-requests: write
+        uses: ./.github/workflows/reusable-cd-workflow.yaml
+        with:
+          module_path: db
+          aws_region: us-east-1
+          dev: true
+          stg: true
+          prod: false
