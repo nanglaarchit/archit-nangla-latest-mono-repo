@@ -1,24 +1,23 @@
----
-    name: Call a ecs CI workflow
+name: Call an ECS CI workflow
 
-    on:
-      push:
-        branches:
-          - '*'
-        paths:
-          - 'terraform/ecs/**'
-          - '.github/workflows/ecs-ci.yaml'
+on:
+  push:
+    branches:
+      - '*'
+    paths:
+      - 'terraform/ecs/**'
+      - '.github/workflows/ecs-ci.yaml'
 
-    jobs:
-      call_ci_workflow_for_ecs:
-        permissions:
-          id-token: write
-          contents: read
-          pull-requests: write
-        uses: ./.github/workflows/reusable-ci-workflow.yaml
-        with:
-          module_path: ecs
-          aws_region: us-east-1
-          dev: true
-          stg: false
-          prod: false
+jobs:
+  call_ci_workflow_for_ecs:
+    uses: nanglaarchit/archit-nangla-latest-mono-repo/.github/workflows/reusable-ci-workflow.yaml@main
+    with:
+      module_path: ecs
+      aws_region: us-east-1
+      dev: true
+      stg: false
+      prod: false
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
