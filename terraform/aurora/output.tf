@@ -10,6 +10,8 @@ output "identifier" {
   description = "Instance or Cluster Identifier"
 }
 
+
+
 output "arn" {
   value       = module.aurora.arn
   description = "Instance or Cluster ARN"
