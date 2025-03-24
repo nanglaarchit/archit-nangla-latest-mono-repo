@@ -17,7 +17,6 @@ provider "aws" {
   region = var.region
 }
 
-
 module "tags" {
   source  = "sourcefuse/arc-tags/aws"
   version = "1.2.6"
