@@ -37,7 +37,6 @@ module "pipelines" {
   role_data          = local.role_data
   codebuild_projects = local.codebuild_projects
   codepipelines      = local.codepipeline_data
-#   chatbot_data       = local.chatbot_data
 
   tags = module.tags.tags
 }

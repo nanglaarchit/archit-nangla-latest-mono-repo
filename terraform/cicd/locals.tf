@@ -22,16 +22,6 @@ locals {
     policy_name     = "pipeline-policy-to-reject"
   }]
 
-#   chatbot_data = {
-#     name                     = "${var.namespace}-slack"
-#     slack_channel_id         = "C0xxxxxxx5"
-#     slack_workspace_id       = "T0xxxxxxRT"
-#     managed_policy_arns      = ["arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"]
-#     guardrail_policies       = ["arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"]
-#     role_polices             = local.policies
-#     enable_slack_integration = true
-#   }
-
   notification_event_and_type = {
     event_type_ids = [
       "codepipeline-pipeline-pipeline-execution-failed",
@@ -44,7 +34,7 @@ locals {
       "codepipeline-pipeline-manual-approval-needed"
     ]
     targets = [
-        
+
     ]
   }
 

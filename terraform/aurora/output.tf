@@ -3,14 +3,10 @@ output "id" {
   description = "Instance or Cluster ID"
 }
 
-
-
 output "identifier" {
   value       = module.aurora.identifier
   description = "Instance or Cluster Identifier"
 }
-
-
 
 output "arn" {
   value       = module.aurora.arn

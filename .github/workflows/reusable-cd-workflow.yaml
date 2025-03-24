@@ -1,3 +1,4 @@
+---
 name: Reusable CD workflow
 
 on:
@@ -46,14 +47,14 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-        #get aws credentials for backend
+        # get aws credentials for backend
       - name: Configure credentials for terraform backend
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
           aws-region: ${{ inputs.aws_region }}
 
-        # initialize backend
+      # Initialize backend
       - name: Initialize terraform backend
         run: |
           terraform -v
@@ -68,9 +69,9 @@ jobs:
       - name: Plan against dev
         id: dev_plan
         run: |
-         source scripts/action-init-plan-apply.sh -p dev -d ${{ env.DIRECTORY }}
+          source scripts/action-init-plan-apply.sh -p dev -d ${{ env.DIRECTORY }}
 
-          # publish plan to artifacts
+           # publish plan to artifacts
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v3
         with:
@@ -158,14 +159,14 @@ jobs:
         run: ./scripts/dependencies/install-aws-cli.sh
         continue-on-error: false
 
-        #get aws credentials for backend
+        # get aws credentials for backend
       - name: Configure credentials for terraform backend
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
           aws-region: ${{ inputs.aws_region }}
 
-        # initialize backend
+      # initialize backend
       - name: Initialize terraform backend
         run: |
           terraform -v
@@ -248,7 +249,7 @@ jobs:
         id: stg_apply
         run: |
           source scripts/action-init-plan-apply.sh -a stg -d ${{ inputs.module_path }}
-    
+
   prod_plan:
     name: Run terraform plan for prod
     runs-on: ubuntu-latest
@@ -269,14 +270,14 @@ jobs:
         run: ./scripts/dependencies/install-aws-cli.sh
         continue-on-error: false
 
-        #get aws credentials for backend
+        # get aws credentials for backend
       - name: Configure credentials for terraform backend
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
           aws-region: ${{ inputs.aws_region }}
 
-        # initialize backend
+      # initialize backend
       - name: Initialize terraform backend
         run: |
           terraform -v
@@ -300,7 +301,7 @@ jobs:
           name: "prod-${{ inputs.module_path }}-${{ env.PLAN_ID }}-tfplan"
           path: "terraform/${{ inputs.module_path }}/prod-${{ inputs.module_path }}-${{ env.PLAN_ID }}.tfplan"
         env:
-          PLAN_ID: ${{ steps.workflow_vars.outputs.plan_id }}   
+          PLAN_ID: ${{ steps.workflow_vars.outputs.plan_id }}
 
   ## Manual approval
   approval_prod:
@@ -308,18 +309,18 @@ jobs:
     needs: prod_plan
     runs-on: ubuntu-latest
     steps:
-    - name: manual approval
-      uses: trstringer/manual-approval@v1
-      with:
-        secret: ${{ github.TOKEN }}
-        approvers: Arunsai14,prernagp
-        minimum-approvals: 1
+      - name: manual approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: Arunsai14,prernagp
+          minimum-approvals: 1
 
   prod_deploy:
     name: "prod: Deploy for terraform/${{ inputs.module_path }}"
     runs-on: ubuntu-latest
     environment: prod
-    needs: approval_prod 
+    needs: approval_prod
     permissions:
       id-token: write
       contents: read
@@ -372,4 +373,3 @@ jobs:
         id: prod_apply
         run: |
           source scripts/action-init-plan-apply.sh -a prod -d ${{ inputs.module_path }}
-    

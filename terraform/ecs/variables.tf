@@ -13,12 +13,6 @@ variable "namespace" {
   description = "Namespace of the project, i.e. arc"
 }
 
-variable "vpc_name" {
-  type        = string
-  description = "Name of the VPC to add the resources"
-  default     = "arc-poc-vpc"
-}
-
 variable "subnet_names" {
   type        = list(string)
   description = "List of subnet names to lookup"

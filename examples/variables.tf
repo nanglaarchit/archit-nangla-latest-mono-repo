@@ -28,6 +28,18 @@ variable "azs" {
   type        = list(string)
 }
 
+variable "destination_cidr_block_public" {
+  description = "CIDR block for public route table"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
+variable "destination_cidr_block_private" {
+  description = "CIDR block for private route table"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
 variable "ec2_name" {
   description = "Name of the EC2 instance"
   type        = string

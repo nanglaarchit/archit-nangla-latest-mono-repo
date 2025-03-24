@@ -1,14 +1,31 @@
+terraform {
+  required_version = ">= 1.5.3"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.0.0"
+    }
+  }
+}
+
 provider "aws" {
   region = var.aws_region
 }
 
 module "network" {
-  source          = "../modules/network"
-  name            = var.network_name
-  vpc_cidr        = var.vpc_cidr
-  public_subnets  = var.public_subnets
-  private_subnets = var.private_subnets
-  azs             = var.azs
+  source                         = "../modules/network"
+  name                           = var.network_name
+  vpc_cidr                       = var.vpc_cidr
+  public_subnets                 = var.public_subnets
+  private_subnets                = var.private_subnets
+  azs                            = var.azs
+  destination_cidr_block_public  = var.destination_cidr_block_public
+  destination_cidr_block_private = var.destination_cidr_block_private
 }
 
 module "ec2_instance" {

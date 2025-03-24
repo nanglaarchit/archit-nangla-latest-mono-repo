@@ -26,9 +26,9 @@ variable "region" {
 #######################################################
 ## eks / kubernetes / helm
 #######################################################
-variable "csi_driver_enabled" {
-  default = true
-}
+# variable "csi_driver_enabled" {
+#   default = true
+# }
 
 variable "kubernetes_version" {
   description = "Desired Kubernetes master version. If you do not specify a value, the latest available version is used"

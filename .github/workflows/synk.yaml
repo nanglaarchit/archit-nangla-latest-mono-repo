@@ -1,11 +1,11 @@
 ---
 name: snyk
 
-on:              # yamllint disable-line rule:truthy
+on:  # yamllint disable-line rule:truthy
   push:
     branches:
-      - "**"       # matches every branch
-      - "!master"    # excludes master
+      - "**"  # Matches every branch
+      - "!master"  # Excludes master
   pull_request:
     branches:
       - master

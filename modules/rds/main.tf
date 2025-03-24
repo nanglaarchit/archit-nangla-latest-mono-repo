@@ -1,3 +1,14 @@
+terraform {
+  required_version = ">= 1.3.0"
+}
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 4.0"
+    }
+  }
+}
 resource "aws_db_instance" "rds" {
   allocated_storage      = var.allocated_storage
   storage_type           = var.storage_type
@@ -41,11 +52,14 @@ resource "aws_security_group" "rds_sg" {
       cidr_blocks = ingress.value.cidr_blocks
     }
   }
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  dynamic "egress" {
+    for_each = var.sg_egress
+    content {
+      from_port   = egress.value.from_port
+      to_port     = egress.value.to_port
+      protocol    = egress.value.protocol
+      cidr_blocks = egress.value.cidr_blocks
+    }
   }
   tags = {
     Name = "${var.name}-rds-sg"

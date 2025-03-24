@@ -1,3 +1,14 @@
+terraform {
+  required_version = ">= 1.3.0"
+}
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 4.0"
+    }
+  }
+}
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
   tags = {
@@ -53,7 +64,7 @@ resource "aws_route_table_association" "public" {
 }
 resource "aws_route" "public" {
   route_table_id         = aws_route_table.public.id
-  destination_cidr_block = "0.0.0.0/0"
+  destination_cidr_block = var.destination_cidr_block_public
   gateway_id             = aws_internet_gateway.main.id
 }
 resource "aws_route_table" "private" {
@@ -69,6 +80,6 @@ resource "aws_route_table_association" "private" {
 }
 resource "aws_route" "private" {
   route_table_id         = aws_route_table.private.id
-  destination_cidr_block = "0.0.0.0/0"
+  destination_cidr_block = var.destination_cidr_block_private
   nat_gateway_id         = aws_nat_gateway.main.id
 }

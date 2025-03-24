@@ -1,3 +1,4 @@
+---
 name: Reusable CI workflow
 
 on:
@@ -36,7 +37,7 @@ jobs:
     environment: dev
     outputs:
       plan_id: ${{ steps.dev_plan.outputs.plan_id }}
-    if: inputs.dev == true
+    if: ${{ inputs.dev == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -48,14 +49,14 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-        #get aws credentials for backend
+      # Get AWS credentials for backend
       - name: Configure credentials for terraform backend
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{ vars.IAM_ROLE_NAME }}"
           aws-region: ${{ inputs.aws_region }}
 
-        # initialize backend
+      # Initialize backend
       - name: Initialize terraform backend
         run: |
           terraform -v
@@ -64,7 +65,7 @@ jobs:
       - name: Configure credentials for dev
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{ vars.IAM_ROLE_NAME }}"
           aws-region: ${{ inputs.aws_region }}
 
       - name: Plan against dev
@@ -72,11 +73,11 @@ jobs:
         run: |
           source scripts/action-init-plan-apply.sh -p dev -d $DIRECTORY
 
-      - name: Update plan output for dev to pr
+      - name: Update plan output for dev to PR
         uses: mshick/add-pr-comment@v2
         with:
           message-id: dev-tfplan
-          message-path: "terraform/${{inputs.module_path}}/dev-plan-output.txt"
+          message-path: "terraform/${{ inputs.module_path }}/dev-plan-output.txt"
 
   stg_plan:
     name: Run terraform plan for stg
@@ -84,7 +85,7 @@ jobs:
     environment: stg
     outputs:
       plan_id: ${{ steps.stg_plan.outputs.plan_id }}
-    if: inputs.stg == true
+    if: ${{ inputs.stg == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -96,7 +97,7 @@ jobs:
       - name: Configure credentials for terraform backend
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{ vars.IAM_ROLE_NAME }}"
           aws-region: ${{ inputs.aws_region }}
 
       - name: Initialize terraform backend
@@ -107,7 +108,7 @@ jobs:
       - name: Configure credentials for stg
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{ vars.IAM_ROLE_NAME }}"
           aws-region: ${{ inputs.aws_region }}
 
       - name: Plan against stg
@@ -115,11 +116,11 @@ jobs:
         run: |
           source scripts/action-init-plan-apply.sh -p stg -d $DIRECTORY
 
-      - name: Update plan output for stg to pr
+      - name: Update plan output for stg to PR
         uses: mshick/add-pr-comment@v2
         with:
           message-id: stg-tfplan
-          message-path: "terraform/${{inputs.module_path}}/stg-plan-output.txt"
+          message-path: "terraform/${{ inputs.module_path }}/stg-plan-output.txt"
 
   prod_plan:
     name: Run terraform plan for prod
@@ -127,7 +128,7 @@ jobs:
     environment: prod
     outputs:
       plan_id: ${{ steps.prod_plan.outputs.plan_id }}
-    if: inputs.prod == true
+    if: ${{ inputs.prod == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -139,7 +140,7 @@ jobs:
       - name: Configure credentials for terraform backend
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{ vars.IAM_ROLE_NAME }}"
           aws-region: ${{ inputs.aws_region }}
 
       - name: Initialize terraform backend
@@ -150,7 +151,7 @@ jobs:
       - name: Configure credentials for prod
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{vars.IAM_ROLE_NAME }}"
+          role-to-assume: "arn:aws:iam::${{ vars.RESOURCE_AWS_ACCOUNT }}:role/${{ vars.IAM_ROLE_NAME }}"
           aws-region: ${{ inputs.aws_region }}
 
       - name: Plan against prod
@@ -158,8 +159,8 @@ jobs:
         run: |
           source scripts/action-init-plan-apply.sh -p prod -d $DIRECTORY
 
-      - name: Update plan output for prod to pr
+      - name: Update plan output for prod to PR
         uses: mshick/add-pr-comment@v2
         with:
           message-id: prod-tfplan
-          message-path: "terraform/${{inputs.module_path}}/prod-plan-output.txt"
+          message-path: "terraform/${{ inputs.module_path }}/prod-plan-output.txt"

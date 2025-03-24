@@ -1,13 +1,13 @@
 ---
-name: Call a db CD workflow
+name: Call a eks CD workflow
 
 on:
   push:
     branches:
       - master
     paths:
-      - "terraform/aurora/**"
-      - ".github/workflows/db-cd.yaml"
+      - "terraform/eks/**"
+      - ".github/workflows/eks-cd.yaml"
 
   workflow_dispatch:
 
@@ -16,14 +16,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  call_cd_workflow_for_db:
+  call_cd_workflow_for_eks:
     permissions:
       id-token: write
       contents: read
       pull-requests: write
     uses: ./.github/workflows/reusable-cd-workflow.yaml
     with:
-      module_path: aurora
+      module_path: eks
       aws_region: us-east-1
       dev: true
       stg: false

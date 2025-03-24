@@ -1,23 +1,23 @@
 ---
-name: Call a db CI workflow
+name: Call a eks CI workflow
 
 on:
   push:
     branches:
       - "*"
     paths:
-      - "terraform/aurora/**"
-      - ".github/workflows/db-ci.yaml"
+      - "terraform/eks/**"
+      - ".github/workflows/eks-ci.yaml"
 
 jobs:
-  call_ci_workflow_for_db:
+  call_ci_workflow_for_eks:
     permissions:
       id-token: write
       contents: read
       pull-requests: write
     uses: ./.github/workflows/reusable-ci-workflow.yaml
     with:
-      module_path: aurora
+      module_path: eks
       aws_region: us-east-1
       dev: true
       stg: false
