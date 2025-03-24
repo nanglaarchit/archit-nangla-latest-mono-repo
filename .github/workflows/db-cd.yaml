@@ -23,8 +23,8 @@
           pull-requests: write
         uses: ./.github/workflows/reusable-cd-workflow.yaml
         with:
-          module_path: db
+          module_path: aurora
           aws_region: us-east-1
           dev: true
-          stg: true
+          stg: false
           prod: false
