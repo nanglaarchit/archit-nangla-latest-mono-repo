@@ -2,9 +2,9 @@
     name: Call a db CI workflow
 
     on:
-      pull_request:
+      push:
         branches:
-          - 'master'
+          - '*'
         paths:
           - 'terraform/aurora/**'
           - '.github/workflows/db-ci.yaml'
